@@ -89,26 +89,10 @@ def build_song_list(album_id):
         xbmcplugin.addDirectoryItems(addon_handle, album_items, len(album_items))
         xbmcplugin.endOfDirectory(addon_handle)
 
-"""
-def build_search_result_list(items):
-    item_list = []
-    for item in items:
-        if isinstance(item, Band):
-            item_list += list_items.get_band_items([item], from_search=True)
-        elif isinstance(item, Album):
-            item_list += list_items.get_album_items([item])
-    xbmcplugin.addDirectoryItems(addon_handle, item_list, len(item_list))
-    xbmcplugin.endOfDirectory(addon_handle)
-"""
-
 def play_song(url):
     play_item = xbmcgui.ListItem(path=url)
     xbmcplugin.setResolvedUrl(addon_handle, True, listitem=play_item)
 
-"""
-def search(query):
-    build_search_result_list(bandcamp.search(query))
-"""
 
 def main():
     xbmc.log("indigiTUBE plugin called: " + str(sys.argv), xbmc.LOGINFO)
@@ -129,27 +113,6 @@ def main():
     elif mode[0] == 'list_songs':
         album_id = args.get('album_id', [''])[0]
         build_song_list(album_id)
-    """
-    elif mode[0] == 'list_search_albums':
-        band, albums = bandcamp.get_band(args.get('band_id', [''])[0])
-        build_album_list(albums, band)
-    elif mode[0] == 'list_albums':
-        bands = bandcamp.get_collection(bandcamp.get_fan_id())
-        band, albums = bandcamp.get_band(args.get('band_id', [''])[0])
-        build_album_list(bands[band], band)
-    elif mode[0] == 'search':
-        action = args.get('action', [''])[0]
-        query = args.get('query', [''])[0]
-        if action == 'new':
-            query = xbmcgui.Dialog().input(addon.getLocalizedString(30103))
-        if query:
-            search(query)
-    elif mode[0] == 'url':
-        url = args.get('url', [''])[0]
-        build_song_list(*bandcamp.get_album_by_url(url), autoplay=True)
-    elif mode[0] == 'settings':
-        addon.openSettings()
-    """
 
 if __name__ == '__main__':
     xbmc.log('sys.argv:' + str(sys.argv), xbmc.LOGDEBUG)
