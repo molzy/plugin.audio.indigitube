@@ -1,4 +1,5 @@
-import sys
+import sys, re
+import xbmc
 import xbmcgui
 from urllib.parse import urlencode
 
@@ -6,7 +7,9 @@ class ListItems:
     INDIGITUBE_ACCESS_KEY            = 'access_token=%242a%2410%24x2Zy%2FTgIAOC0UUMi3NPKc.KY49e%2FZLUJFOpBCNYAs8D72UUnlI526'
     INDIGITUBE_ALBUM_URL             = 'https://api.appbooks.com/content/album/{}?' + INDIGITUBE_ACCESS_KEY
     INDIGITUBE_TRACK_URL             = 'https://api.appbooks.com/get/{}?' + INDIGITUBE_ACCESS_KEY
+    INDIGITUBE_VIDEO_URL             = 'https://api.appbooks.com/get/{}?variant=720&' + INDIGITUBE_ACCESS_KEY
     INDIGITUBE_ALBUM_ART_URL         = 'https://api.appbooks.com/get/{}/file/file.jpg?w={}&quality=90&' + INDIGITUBE_ACCESS_KEY + '&ext=.jpg'
+    QUERY_RADIO = '5b5ac73df6b4d90e6deeabd1'
 
     def __init__(self, addon):
         self.addon = addon
@@ -25,117 +28,201 @@ class ListItems:
         base_url = sys.argv[0]
         return base_url + '?' + urlencode(query)
 
-    def get_root_items(self):
-        items = []
-        # discover menu
-        li = xbmcgui.ListItem(label=self.addon.getLocalizedString(30101))
-        li.setArt({'icon': 'DefaultMusicSources.png'})
-        url = self._build_url({'mode': 'list_radio'})
-        items.append((url, li, True))
+    def get_item(self, item_json, args={}):
+       definition = item_json.get('definition', item_json.get('file', {}).get('definition'))
+       if definition == 'radioStation':
+           return self.get_radio_station_item(item_json)
+       elif definition == 'channel':
+           if item_json.get('_id') == self.QUERY_RADIO:
+               return self.get_channel_item(item_json, query=True)
+           else:
+               return self.get_channel_item(item_json)
+       elif definition == 'audioContent':
+           return self.get_track_item(item_json, args)
+       elif definition == 'videoContent':
+           return self.get_video_item(item_json)
+       elif definition == 'album':
+           return self.get_album_item(item_json)
 
-        li = xbmcgui.ListItem(label=self.addon.getLocalizedString(30102))
-        li.setArt({'icon': 'DefaultMusicSources.png'})
-        url = self._build_url({'mode': 'list_songs', 'album_id': '629c1a22df379220b662d31f'})
-        items.append((url, li, True))
+    def get_radio_station_item(self, item_json):
+        item_data = item_json.get('data', {})
+        title     = item_json.get('title', '')
+        artist    = item_json.get('realms', [{}])[0].get('title')
+        url       = item_data.get('feedSource')
+        desc      = item_data.get('description')
+        textbody  = re.compile(r'<[^>]+>').sub('', desc)
+        art_id    = item_data.get('coverImage', '')
+        if not isinstance(art_id, str):
+            art_id = art_id.get('_id')
+        art_url  = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
 
-        # search
-        li = xbmcgui.ListItem(label=self.addon.getLocalizedString(30103))
-        li.setArt({'icon': 'DefaultMusicSearch.png'})
-        url = self._build_url({'mode': 'search', 'action': 'new'})
-        items.append((url, li, True))
-        return items
+        li = xbmcgui.ListItem(label=title)
+        vi = li.getVideoInfoTag()
+        vi.setPlot(textbody)
+        vi.setTitle(title + ' - ' + artist)
+        li.setArt({'thumb': art_url})
+        li.setProperty('IsPlayable', 'true')
+        li.setPath(url)
+        return (url, li, False)
 
-    def get_radio_items(self, radio_data):
-        items = []
-        for station in radio_data:
-            title   = station.get('title')
-            artist  = station.get('realms', [{}])[0].get('title')
-            url     = station.get('data', {}).get('feedSource')
-            art_id  = station.get('data', {}).get('coverImage', {}).get('_id')
-            art_url = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
+    def get_channel_item(self, item_json, query=False):
+        item_data = item_json.get('data', {})
+        title     = item_json.get('title', '')
+        if query:
+            mode    = 'list_query'
+            key_id  = 'query_id'
+            item_id = item_json.get('data', {}).get('query')
+        else:
+            mode    = 'list_channel'
+            key_id  = 'channel_id'
+            item_id = item_json.get('_id')
+        desc      = item_data.get('description', '')
+        textbody  = re.compile(r'<[^>]+>').sub('', desc)
+        url       = self._build_url({'mode': mode, key_id: item_id})
+
+        li = xbmcgui.ListItem(label=title)
+        vi = li.getVideoInfoTag()
+        vi.setTitle(title)
+        vi.setPlot(textbody)
+        li.setPath(url)
+        return (url, li, True)
+
+    def get_album_item(self, item_json):
+        item_data = item_json.get('data', {})
+        title     = item_json.get('title', '')
+        artist    = item_data.get('artist', '')
+        desc      = item_data.get('description', '')
+        textbody  = re.compile(r'<[^>]+>').sub('', desc)
+        art_id    = item_data.get('coverImage', '')
+        if not isinstance(art_id, str):
+            art_id = art_id.get('_id')
+        art_url = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
+
+        if len(item_data.get('items', [])) > 1:
+            url = self._build_url({'mode': 'list_songs', 'album_id': item_json.get('_id')})
 
             li = xbmcgui.ListItem(label=title)
-            li.setInfo('music', {'title': title, 'artist': artist})
+            vi = li.getVideoInfoTag()
+            vi.setTitle(title + ' - ' + artist)
+            vi.setPlot(textbody)
+            if art_url:
+                li.setArt({'thumb': art_url})
+            li.setPath(url)
+            return (url, li, True)
+        else:
+            item = item_data.get('items', [])[0]
+            file = item.get('file', '')
+            if not isinstance(file, str):
+                file = file.get('_id')
+            url = self.INDIGITUBE_TRACK_URL.format(file)
+            
+            li = xbmcgui.ListItem(label=title)
+            if item_data.get('mediaType') != 'music':
+                vi = li.getVideoInfoTag()
+                vi.setTitle(title)
+                vi.setPlot(textbody)
+            else:
+                mi = li.getMusicInfoTag()
+                mi.setTitle(title)
+                mi.setArtist(artist)
+                mi.setMediaType('song')
             li.setArt({'thumb': art_url})
             li.setProperty('IsPlayable', 'true')
-            # url = self._build_url({'mode': 'stream', 'url': track.file, 'title': title})
             li.setPath(url)
-            items.append((url, li, False))
+            return (url, li, False)
+
+    def get_track_item(self, item_json, args):
+        title   = item_json.get('title', '')
+        artist  = item_json.get('artist', '')
+        file = item_json.get('file', '')
+        if not isinstance(file, str):
+            file = file.get('_id')
+        url = self.INDIGITUBE_TRACK_URL.format(file)
+
+        li = xbmcgui.ListItem(label=title)
+        mi = li.getMusicInfoTag()
+        mi.setTitle(title)
+        mi.setArtist(artist)
+        mi.setMediaType('song')
+        if args.get('album'):
+            mi.setAlbum(args.get('album'))
+        if args.get('album_artist'):
+            mi.setAlbumArtist(args.get('album_artist'))
+        if args.get('track_number', 0) > 0:
+            mi.setTrack(args.get('track_number'))
+        li.setArt({'thumb': args.get('art_url')})
+        li.setProperty('IsPlayable', 'true')
+        li.setPath(url)
+        return (url, li, False)
+
+    def get_video_item(self, item_json):
+        item_data = item_json.get('data', {})
+        title    = item_json.get('title', '')
+        duration = int(item_json.get('duration', 0))
+        url      = self.INDIGITUBE_VIDEO_URL.format(item_json.get('_id'))
+        desc      = item_data.get('description', '')
+        textbody  = re.compile(r'<[^>]+>').sub('', desc)
+        art_id   = item_json.get('poster', '')
+        if not isinstance(art_id, str) and len(art_id) > 0:
+            art_id = art_id[0]
+
+        li = xbmcgui.ListItem(label=title)
+        vi = li.getVideoInfoTag()
+        vi.setTitle(title)
+        vi.setDuration(duration)
+        if textbody:
+            vi.setPlot(textbody)
+        if art_id:
+            art_url  = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
+            li.setArt({'thumb': art_url})
+        li.setProperty('IsPlayable', 'true')
+        li.setPath(url)
+        return (url, li, False)
+        
+
+    def get_root_items(self, page_json):
+        page_data = page_json.get('data', {})
+        items = []
+        for carousel in page_data.get('carousels', []):
+            item = self.get_item(carousel)
+            if item:
+                items.append(item)
+        return items
+
+    def get_query_items(self, query_json):
+        items = []
+        for station in query_json:
+            item = self.get_item(station)
+            if item:
+                items.append(item)
+        # items.sort(key=lambda x: x[1].getLabel())
+        return items
+
+    def get_channel_items(self, channel_json):
+        channel_data = channel_json.get('data', {})
+        channel_items = channel_data.get('items', {})
+        items = []
+        for channel in channel_items:
+            if channel.get('item'):
+                item = self.get_item(channel.get('item'))
+                if item:
+                    items.append(item)
         return items
 
     def get_track_items(self, album_json):
         items = []
-        album_title = album_json.get('title', '')
-        album_data = album_json.get('data', {})
-        art_id  = album_data.get('coverImage', {}).get('_id')
-        art_url = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
-
-        track_num = 1
+        album_title   = album_json.get('title', '')
+        album_artist  = album_json.get('realms', [{}])[0].get('title', '')
+        album_data    = album_json.get('data', {})
+        art_id        = album_data.get('coverImage', {}).get('_id')
+        album_art_url = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
+        args = {
+            'track_number': 1,
+            'album': album_title,
+            'album_artist': album_artist,
+            'art_url': album_art_url,
+        }
         for track in album_data.get('items', []):
-            title   = track.get('title')
-            artist  = track.get('artist')
-            url     = self.INDIGITUBE_TRACK_URL.format(track.get('file', {}).get('_id'))
-
-            li = xbmcgui.ListItem(label=title)
-            li.setInfo('music', {
-                'title': title, 
-                'artist': artist,
-                'mediatype': 'song',
-                'tracknumber': track_num,
-                'album': album_title,
-            })
-            li.setArt({'thumb': art_url})
-            li.setProperty('IsPlayable', 'true')
-            # url = self._build_url({'mode': 'stream', 'url': track.file, 'title': title})
-            li.setPath(url)
-            items.append((url, li, False))
-            track_num += 1
+            items.append(self.get_item(track, args))
+            args['track_number'] += 1
         return items
-
-"""
-    def get_album_items(self, albums, band=None, group_by_artist=False):
-        items = []
-        if group_by_artist:
-            li = xbmcgui.ListItem(label=self.addon.getLocalizedString(30106))
-            li.setArt({'icon': 'DefaultMusicArtists.png'})
-            url = self._build_url({'mode': group_by_artist + '_band'})
-            items.append((url, li, True))
-        for album in albums:
-            if band:
-                album_title = '{} - {}'.format(band.band_name, album.album_name)
-            elif album.band:
-                album_title = '{} - {}'.format(album.band.band_name, album.album_name)
-            else:
-                album_title = album.album_name
-
-            li = xbmcgui.ListItem(label=album_title)
-            url = self._build_url({'mode': 'list_songs', 'album_id': album.album_id, 'item_type': album.item_type})
-            band_art = band.get_art_img(quality=self._band_quality()) if band else None
-            album_art = album.get_art_img(quality=self._album_quality())
-            li.setArt({'thumb': album_art, 'fanart': band_art if band_art else album_art})
-            items.append((url, li, True))
-        return items
-
-    def get_track_items(self, band, album, tracks, to_album=False):
-        items = []
-        for track in tracks:
-            title = u"{band} - {track}".format(band=band.band_name, track=track.track_name)
-            li = xbmcgui.ListItem(label=title)
-            li.setInfo('music', {'duration': int(track.duration), 'album': album.album_name, 'genre': album.genre,
-                                 'mediatype': 'song', 'tracknumber': track.number, 'title': track.track_name,
-                                 'artist': band.band_name})
-            band_art = band.get_art_img(quality=self._band_quality())
-            album_art = album.get_art_img(quality=self._album_quality())
-            li.setArt({'thumb': album_art, 'fanart': band_art if band_art else album_art})
-            li.setProperty('IsPlayable', 'true')
-            url = self._build_url({'mode': 'stream', 'url': track.file, 'title': title})
-            li.setPath(url)
-            if to_album:
-                album_url = self._build_url(
-                    {'mode': 'list_songs', 'album_id': album.album_id, 'item_type': album.item_type})
-                cmd = 'Container.Update({album_url})'.format(album_url=album_url)
-                commands = [(self.addon.getLocalizedString(30202), cmd)]
-                li.addContextMenuItems(commands)
-            items.append((url, li, False))
-        return items
-"""

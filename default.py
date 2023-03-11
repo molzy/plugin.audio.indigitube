@@ -14,9 +14,15 @@ except:
     from resources.lib.cache import storageserverdummy as StorageServer
 cache = StorageServer.StorageServer('plugin.audio.indigitube', 24)  # (Your plugin name, Cache time in hours)
 
-USER_AGENT    = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
-CONTENT_QUERY = 'https://api.appbooks.com/content/_query/{}'
-CONTENT_ALBUM = 'https://api.appbooks.com/content/album/{}'
+USER_AGENT      = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
+CONTENT_QUERY   = 'https://api.appbooks.com/content/_query/{}'
+CONTENT_CHANNEL = 'https://api.appbooks.com/content/channel/{}'
+CONTENT_ALBUM   = 'https://api.appbooks.com/content/album/{}'
+CONTENT_PAGE    = 'https://api.appbooks.com/content/pageConfiguration/{}'
+
+PAGE_HOME = '5b5abc2bf6b4d90e6deeaabb'
+QUERY_RADIO = '5d1aeac759dd785afe88ec0b'
+CHANNEL_RADIO = '5b5ac73df6b4d90e6deeabd1'
 
 def urlopen_ua(url):
     headers = {
@@ -34,28 +40,54 @@ def get_json_obj(url):
 def get_query_content(media_id):
     return get_json_obj(CONTENT_QUERY.format(media_id))
 
+def get_channel_content(media_id):
+    return get_json_obj(CONTENT_CHANNEL.format(media_id))
+
 def get_album_content(media_id):
     return get_json_obj(CONTENT_ALBUM.format(media_id))
 
+def get_page_content(page_id):
+    return get_json_obj(CONTENT_PAGE.format(page_id))
+
 
 def build_main_menu():
-    root_items = list_items.get_root_items()
-    xbmcplugin.addDirectoryItems(addon_handle, root_items, len(root_items))
-    xbmcplugin.endOfDirectory(addon_handle)
+    home_json = get_page_content(PAGE_HOME)
+    root_items = list_items.get_root_items(home_json)
+    if len(root_items) > 0:
+        xbmcplugin.setPluginCategory(addon_handle, home_json.get('title', ''))
+        xbmcplugin.addDirectoryItems(addon_handle, root_items, len(root_items))
+        xbmcplugin.endOfDirectory(addon_handle)
 
-def build_radio_list():
-    radio_json = get_query_content('5d1aeac759dd785afe88ec0b')
-    radio_items = list_items.get_radio_items(radio_json)
-    xbmcplugin.addDirectoryItems(addon_handle, radio_items, len(radio_items))
-    xbmcplugin.endOfDirectory(addon_handle)
+def build_query_list(query_id, title=''):
+    query_json = get_query_content(query_id)
+    query_items = list_items.get_query_items(query_json)
+    if len(query_items) > 0:
+        xbmcplugin.setPluginCategory(addon_handle, title)
+        xbmcplugin.addDirectoryItems(addon_handle, query_items, len(query_items))
+        xbmcplugin.endOfDirectory(addon_handle)
+
+def build_channel_list(channel_id):
+    channel_json = get_channel_content(channel_id)
+    channel_data = channel_json.get('data', {})
+    if len(channel_data.get('items', [])) > 1:
+        channel_items = list_items.get_channel_items(channel_json)
+        if len(channel_items) > 0:
+            xbmcplugin.setPluginCategory(addon_handle, channel_json.get('title', ''))
+            xbmcplugin.addDirectoryItems(addon_handle, channel_items, len(channel_items))
+            xbmcplugin.endOfDirectory(addon_handle)
+    else:
+        query = channel_data.get('query', {}).get('_id')
+        return build_query_list(query, title=channel_json.get('title'))
 
 def build_song_list(album_id):
     album_json = get_album_content(album_id)
     album_items = list_items.get_track_items(album_json)
-    xbmcplugin.addSortMethod(addon_handle, xbmcplugin.SORT_METHOD_UNSORTED)
-    xbmcplugin.setContent(addon_handle, 'songs')
-    xbmcplugin.addDirectoryItems(addon_handle, album_items, len(album_items))
-    xbmcplugin.endOfDirectory(addon_handle)
+    if len(album_items) > 0:
+        xbmcplugin.setPluginCategory(addon_handle, album_json.get('title', ''))
+        xbmcplugin.addSortMethod(addon_handle, xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.setContent(addon_handle, 'songs')
+        xbmcplugin.addDirectoryItems(addon_handle, album_items, len(album_items))
+        xbmcplugin.endOfDirectory(addon_handle)
 
 """
 def build_search_result_list(items):
@@ -79,6 +111,7 @@ def search(query):
 """
 
 def main():
+    xbmc.log("indigiTUBE plugin called: " + str(sys.argv), xbmc.LOGINFO)
     args = parse_qs(sys.argv[2][1:])
     mode = args.get('mode', None)
     if mode is None:
@@ -86,7 +119,13 @@ def main():
     elif mode[0] == 'stream':
         play_song(args.get('url', [''])[0])
     elif mode[0] == 'list_radio':
-        build_radio_list()
+        build_query_list(QUERY_RADIO)
+    elif mode[0] == 'list_query':
+        query_id = args.get('query_id', [''])[0]
+        build_query_list(query_id)
+    elif mode[0] == 'list_channel':
+        channel_id = args.get('channel_id', [''])[0]
+        build_channel_list(channel_id)
     elif mode[0] == 'list_songs':
         album_id = args.get('album_id', [''])[0]
         build_song_list(album_id)
