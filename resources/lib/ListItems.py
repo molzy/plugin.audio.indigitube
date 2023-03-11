@@ -117,15 +117,9 @@ class ListItems:
             url = self.INDIGITUBE_TRACK_URL.format(file)
             
             li = xbmcgui.ListItem(label=title)
-            if item_data.get('mediaType') != 'music':
-                vi = li.getVideoInfoTag()
-                vi.setTitle(title)
-                vi.setPlot(textbody)
-            else:
-                mi = li.getMusicInfoTag()
-                mi.setTitle(title)
-                mi.setArtist(artist)
-                mi.setMediaType('song')
+            vi = li.getVideoInfoTag()
+            vi.setTitle(title)
+            vi.setPlot(textbody)
             li.setArt({'thumb': art_url})
             li.setProperty('IsPlayable', 'true')
             li.setPath(url)
