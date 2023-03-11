@@ -1,4 +1,4 @@
-import sys, re
+import sys, re, os
 import xbmc
 import xbmcgui
 from urllib.parse import urlencode
@@ -13,6 +13,8 @@ class ListItems:
 
     def __init__(self, addon):
         self.addon = addon
+        self._respath = os.path.join(self.addon.getAddonInfo('path'), 'resources')
+        self.fanart = os.path.join(self._respath, 'fanart.jpg')
         quality = self.addon.getSetting('image_quality')
         self.quality = int(quality) if quality else 1
 
@@ -60,7 +62,7 @@ class ListItems:
         vi = li.getVideoInfoTag()
         vi.setPlot(textbody)
         vi.setTitle(title + ' - ' + artist)
-        li.setArt({'thumb': art_url})
+        li.setArt({'thumb': art_url, 'fanart': self.fanart})
         li.setProperty('IsPlayable', 'true')
         li.setPath(url)
         return (url, li, False)
@@ -84,6 +86,7 @@ class ListItems:
         vi = li.getVideoInfoTag()
         vi.setTitle(title)
         vi.setPlot(textbody)
+        li.setArt({'fanart': self.fanart})
         li.setPath(url)
         return (url, li, True)
 
@@ -98,17 +101,17 @@ class ListItems:
             art_id = art_id.get('_id')
         art_url = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
 
+        li = xbmcgui.ListItem(label=title)
+        vi = li.getVideoInfoTag()
+        vi.setPlot(textbody)
+        li.setArt({'thumb': art_url, 'fanart': self.fanart})
+        folder = False
+
         if len(item_data.get('items', [])) > 1:
             url = self._build_url({'mode': 'list_songs', 'album_id': item_json.get('_id')})
 
-            li = xbmcgui.ListItem(label=title)
-            vi = li.getVideoInfoTag()
             vi.setTitle(title + ' - ' + artist)
-            vi.setPlot(textbody)
-            if art_url:
-                li.setArt({'thumb': art_url})
-            li.setPath(url)
-            return (url, li, True)
+            folder = True
         else:
             item = item_data.get('items', [])[0]
             file = item.get('file', '')
@@ -116,14 +119,10 @@ class ListItems:
                 file = file.get('_id')
             url = self.INDIGITUBE_TRACK_URL.format(file)
             
-            li = xbmcgui.ListItem(label=title)
-            vi = li.getVideoInfoTag()
             vi.setTitle(title)
-            vi.setPlot(textbody)
-            li.setArt({'thumb': art_url})
             li.setProperty('IsPlayable', 'true')
-            li.setPath(url)
-            return (url, li, False)
+
+        return (url, li, folder)
 
     def get_track_item(self, item_json, args):
         title   = item_json.get('title', '')
@@ -144,7 +143,7 @@ class ListItems:
             mi.setAlbumArtist(args.get('album_artist'))
         if args.get('track_number', 0) > 0:
             mi.setTrack(args.get('track_number'))
-        li.setArt({'thumb': args.get('art_url')})
+        li.setArt({'thumb': args.get('art_url'), 'fanart': self.fanart})
         li.setProperty('IsPlayable', 'true')
         li.setPath(url)
         return (url, li, False)
@@ -168,7 +167,7 @@ class ListItems:
             vi.setPlot(textbody)
         if art_id:
             art_url  = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
-            li.setArt({'thumb': art_url})
+            li.setArt({'thumb': art_url, 'fanart': self.fanart})
         li.setProperty('IsPlayable', 'true')
         li.setPath(url)
         return (url, li, False)

@@ -19,8 +19,8 @@
         </news>
         <assets>
             <icon>resources/icon.jpg</icon>
-            <fanart>resources/fanart.png</fanart>
-            <screenshot>resources/screenshot/radio.jpg</screenshot>
+            <fanart>resources/fanart.jpg</fanart>
+            <screenshot>resources/screenshot.jpg</screenshot>
         </assets>
     </extension>
 </addon>
