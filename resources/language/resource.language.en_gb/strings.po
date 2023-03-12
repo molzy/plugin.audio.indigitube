@@ -22,8 +22,8 @@ msgctxt "#30001"
 msgid "General"
 msgstr ""
 
-msgctxt "#30014"
-msgid "General settings for the Bandcamp addon"
+msgctxt "#30011"
+msgid "General settings for the indigiTUBE addon"
 msgstr ""
 
 msgctxt "#30020"
@@ -46,28 +46,51 @@ msgctxt "#30024"
 msgid "Low"
 msgstr ""
 
+msgctxt "#30030"
+msgid "Allow Explicit Language"
+msgstr ""
+
+msgctxt "#30031"
+msgid "When turned off, content containing explicit language will be filtered."
+msgstr ""
+
+msgctxt "#30032"
+msgid "WARNING: Some content contains explicit language.\nAllow explicit language?\nYour selection can be changed later in the add-on settings."
+msgstr ""
+
+msgctxt "#30033"
+msgid "Contains Explicit Language"
+msgstr ""
+
+msgctxt "#30034"
+msgid "Explicit language is disabled in the add-on settings."
+msgstr ""
+
+msgctxt "#30040"
+msgid "Allow Content Containing Deceased People"
+msgstr ""
+
+msgctxt "#30041"
+msgid "When turned off, content containing deceased people will be filtered."
+msgstr ""
+
+msgctxt "#30032"
+msgid "WARNING: Some content contains images, voices and names of deceased people.\nAllow this content?\nYour selection can be changed later in the add-on settings."
+msgstr ""
+
+msgctxt "#30098"
+msgid "Acknowledgement Of Country"
+msgstr ""
+
+msgctxt "#30099"
+msgid "indigiTUBE acknowledges our traditional custodians of country where we live and work.\n\nWe pay respect to Elders past, present and emerging, and acknowledge our continuous connection and contribution to land, sea and community.\n\nWARNING: This add-on contains images, voices and names of deceased people."
+msgstr ""
+
 # GUI main menu
 msgctxt "#30101"
 msgid "Listen To Live Radio"
 msgstr ""
 
-msgctxt "#30102"
-msgid "Test Album"
-msgstr ""
-
 msgctxt "#30103"
 msgid "Search"
-msgstr ""
-
-msgctxt "#30106"
-msgid "Group by Artist"
-msgstr ""
-
-# GUI - Discover
-msgctxt "#30201"
-msgid "All"
-msgstr ""
-
-msgctxt "#30202"
-msgid "Go to the album"
 msgstr ""

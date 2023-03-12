@@ -10,9 +10,12 @@ class ListItems:
     INDIGITUBE_VIDEO_URL             = 'https://api.appbooks.com/get/{}?variant=720&' + INDIGITUBE_ACCESS_KEY
     INDIGITUBE_ALBUM_ART_URL         = 'https://api.appbooks.com/get/{}/file/file.jpg?w={}&quality=90&' + INDIGITUBE_ACCESS_KEY + '&ext=.jpg'
     QUERY_RADIO = '5b5ac73df6b4d90e6deeabd1'
+    NOWHERE = 'plugin://plugin.audio.indigitube/?mode=explicit'
 
     def __init__(self, addon):
         self.addon = addon
+        self.allow_explicit = self.addon.getSettingBool('allow_explicit')
+        self.allow_deceased = self.addon.getSettingBool('allow_deceased')
         self._respath = os.path.join(self.addon.getAddonInfo('path'), 'resources')
         self.fanart = os.path.join(self._respath, 'fanart.jpg')
         quality = self.addon.getSetting('image_quality')
@@ -49,6 +52,9 @@ class ListItems:
     def get_radio_station_item(self, item_json):
         item_data = item_json.get('data', {})
         title     = item_json.get('title', '')
+        if not self.allow_deceased:
+            if item_data.get('deceasedContent', 'no') != "no":
+                return
         artist    = item_json.get('realms', [{}])[0].get('title')
         url       = item_data.get('feedSource')
         desc      = item_data.get('description')
@@ -58,7 +64,11 @@ class ListItems:
             art_id = art_id.get('_id')
         art_url  = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
 
-        li = xbmcgui.ListItem(label=title)
+        if item_data.get('explicit'):
+            title += ' (Explicit)'
+            if not self.allow_explicit:
+                url = self.NOWHERE
+        li = xbmcgui.ListItem(label=title, offscreen=True)
         vi = li.getVideoInfoTag()
         vi.setPlot(textbody)
         vi.setTitle(title + ' - ' + artist)
@@ -70,6 +80,9 @@ class ListItems:
     def get_channel_item(self, item_json, query=False):
         item_data = item_json.get('data', {})
         title     = item_json.get('title', '')
+        if not self.allow_deceased:
+            if item_data.get('deceasedContent', 'no') != "no":
+                return
         if query:
             mode    = 'list_query'
             key_id  = 'query_id'
@@ -82,7 +95,11 @@ class ListItems:
         textbody  = re.compile(r'<[^>]+>').sub('', desc)
         url       = self._build_url({'mode': mode, key_id: item_id})
 
-        li = xbmcgui.ListItem(label=title)
+        if item_data.get('allExplicit'):
+            title += ' (Explicit)'
+            if not self.allow_explicit:
+                url = self.NOWHERE
+        li = xbmcgui.ListItem(label=title, offscreen=True)
         vi = li.getVideoInfoTag()
         vi.setTitle(title)
         vi.setPlot(textbody)
@@ -92,6 +109,9 @@ class ListItems:
 
     def get_album_item(self, item_json):
         item_data = item_json.get('data', {})
+        if not self.allow_deceased:
+            if item_data.get('deceasedContent', 'no') != "no":
+                return
         title     = item_json.get('title', '')
         artist    = item_data.get('artist', '')
         desc      = item_data.get('description', '')
@@ -101,7 +121,9 @@ class ListItems:
             art_id = art_id.get('_id')
         art_url = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
 
-        li = xbmcgui.ListItem(label=title)
+        if item_data.get('allExplicit') or item_data.get('explicit'):
+            title += ' (Explicit)'
+        li = xbmcgui.ListItem(label=title, offscreen=True)
         vi = li.getVideoInfoTag()
         vi.setPlot(textbody)
         li.setArt({'thumb': art_url, 'fanart': self.fanart})
@@ -110,8 +132,12 @@ class ListItems:
         if len(item_data.get('items', [])) > 1:
             url = self._build_url({'mode': 'list_songs', 'album_id': item_json.get('_id')})
 
-            vi.setTitle(title + ' - ' + artist)
             folder = True
+            if item_data.get('allExplicit'):
+                if not self.allow_explicit:
+                    folder = False
+                    url = self.NOWHERE
+            vi.setTitle(title + ' - ' + artist)
         else:
             item = item_data.get('items', [])[0]
             file = item.get('file', '')
@@ -119,9 +145,14 @@ class ListItems:
                 file = file.get('_id')
             url = self.INDIGITUBE_TRACK_URL.format(file)
             
-            vi.setTitle(title)
             li.setProperty('IsPlayable', 'true')
+            if item_data.get('explicit'):
+                if not self.allow_explicit:
+                    li.setProperty('IsPlayable', 'false')
+                    url = self.NOWHERE
+            vi.setTitle(title)
 
+        li.setPath(url)
         return (url, li, folder)
 
     def get_track_item(self, item_json, args):
@@ -132,7 +163,11 @@ class ListItems:
             file = file.get('_id')
         url = self.INDIGITUBE_TRACK_URL.format(file)
 
-        li = xbmcgui.ListItem(label=title)
+        if item_json.get('explicit'):
+            title += ' (Explicit)'
+            if not self.allow_explicit:
+                url = self.NOWHERE
+        li = xbmcgui.ListItem(label=title, offscreen=True)
         mi = li.getMusicInfoTag()
         mi.setTitle(title)
         mi.setArtist(artist)
@@ -159,7 +194,11 @@ class ListItems:
         if not isinstance(art_id, str) and len(art_id) > 0:
             art_id = art_id[0]
 
-        li = xbmcgui.ListItem(label=title)
+        if item_data.get('explicit'):
+            title += ' (Explicit)'
+            if not self.allow_explicit:
+                url = self.NOWHERE
+        li = xbmcgui.ListItem(label=title, offscreen=True)
         vi = li.getVideoInfoTag()
         vi.setTitle(title)
         vi.setDuration(duration)
@@ -169,6 +208,10 @@ class ListItems:
             art_url = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
             li.setArt({'thumb': art_url, 'fanart': self.fanart})
         li.setProperty('IsPlayable', 'true')
+        if item_data.get('explicit'):
+            if not self.allow_explicit:
+                url = self.NOWHERE
+                li.setProperty('IsPlayable', 'false')
         li.setPath(url)
         return (url, li, False)
         

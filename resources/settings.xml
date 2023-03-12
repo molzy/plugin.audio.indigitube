@@ -3,6 +3,19 @@
 	<section id="plugin.audio.indigitube">
 		<category id="general" label="30001" help="30011">
 			<group id="1">
+				<setting id="first_run" type="boolean" label="30999" help="">
+					<level>4</level>
+					<default>true</default>
+				</setting>
+				<setting id="allow_explicit" type="boolean" label="30030" help="30031">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="allow_deceased" type="boolean" label="30040" help="30041">
+					<level>4</level>
+					<default>true</default>
+				</setting>
 				<setting id="image_quality" type="integer" label="30020" help="30021">
 					<level>0</level>
 					<default>1</default>

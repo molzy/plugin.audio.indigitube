@@ -95,11 +95,19 @@ def play_song(url):
 
 
 def main():
-    xbmc.log("indigiTUBE plugin called: " + str(sys.argv), xbmc.LOGINFO)
+    if addon.getSettingBool('first_run'):
+        xbmcgui.Dialog().textviewer(get_string(30098), get_string(30099))
+        explicit = xbmcgui.Dialog().yesno(get_string(30030), get_string(30032), defaultbutton=xbmcgui.DLG_YESNO_YES_BTN)
+        # deceased = xbmcgui.Dialog().yesno(get_string(30040), get_string(30042), defaultbutton=xbmcgui.DLG_YESNO_YES_BTN)
+        addon.setSettingBool('allow_explicit', explicit)
+        # addon.setSettingBool('allow_deceased', deceased)
+        addon.setSettingBool('first_run', False)
     args = parse_qs(sys.argv[2][1:])
     mode = args.get('mode', None)
     if mode is None:
         build_main_menu()
+    elif mode[0] == 'explicit':
+        xbmcgui.Dialog().notification(get_string(30033), get_string(30034))
     elif mode[0] == 'stream':
         play_song(args.get('url', [''])[0])
     elif mode[0] == 'list_radio':
@@ -114,8 +122,11 @@ def main():
         album_id = args.get('album_id', [''])[0]
         build_song_list(album_id)
 
+def get_string(string_id):
+    return addon.getLocalizedString(string_id)
+
 if __name__ == '__main__':
-    xbmc.log('sys.argv:' + str(sys.argv), xbmc.LOGDEBUG)
+    xbmc.log("indigiTUBE plugin called: " + str(sys.argv), xbmc.LOGDEBUG)
     addon = xbmcaddon.Addon()
     list_items = ListItems(addon)
     addon_handle = int(sys.argv[1])
