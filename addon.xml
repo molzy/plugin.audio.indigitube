@@ -10,12 +10,12 @@
     <extension point="xbmc.addon.metadata">
         <summary lang="en_GB">Unofficial plugin for indigiTUBE: the Australian national media platform by and for First Nations people.</summary>
         <license>MIT</license>
-        <description lang="en_GB">indigiTUBE connects and supports the preservation of language and culture for our future generations. A living modern midden where technology and culture are woven together, MC Dallas Woods declared the official opening of the next big player entering the digital media arena, "indigiTUBE is very important, it’s something that we’ve needed for a long time. Beautiful culture must be preserved". indigiTUBE gathers First Nations stories from the desert to the sea, connecting and sharing culture from our extremely remote to urban regions; from our fresh new talent to archived histories. indigiTUBE is a digital meeting place for First Nations song, dance, language and lore; creating a unified space to share our evolving and living culture. It also live streams 27 different radio stations to hear what's going on around the country. The visually stunning media platform reflects the rich culture of our First Nations people, and the vibrant colours represent ochre, land and sea.</description>
+        <description lang="en_GB">indigiTUBE (www.indigitube.com.au) connects and supports the preservation of language and culture for our future generations. A living modern midden where technology and culture are woven together. indigiTUBE gathers First Nations stories from the desert to the sea, connecting and sharing culture from our extremely remote to urban regions; from our fresh new talent to archived histories. indigiTUBE is a digital meeting place for First Nations song, dance, language and lore; creating a unified space to share our evolving and living culture. It also live streams 27 different radio stations to hear what's going on around the country. The visually stunning media platform reflects the rich culture of our First Nations people, and the vibrant colours represent ochre, land and sea.</description>
         <platform>all</platform>
         <email>xbmc@molzy.com</email>
         <source>https://github.com/molzy/plugin.audio.indigitube</source>
         <news>v1.0.0
-- Initial release, supports radio and albums
+- Initial release, with content from the homepage including radio, albums, videos and more
         </news>
         <assets>
             <icon>resources/icon.jpg</icon>
