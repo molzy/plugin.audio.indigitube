@@ -153,8 +153,8 @@ class ListItems:
         title    = item_json.get('title', '')
         duration = int(item_json.get('duration', 0))
         url      = self.INDIGITUBE_VIDEO_URL.format(item_json.get('_id'))
-        desc      = item_data.get('description', '')
-        textbody  = re.compile(r'<[^>]+>').sub('', desc)
+        desc     = item_data.get('description', '')
+        textbody = re.compile(r'<[^>]+>').sub('', desc)
         art_id   = item_json.get('poster', '')
         if not isinstance(art_id, str) and len(art_id) > 0:
             art_id = art_id[0]
@@ -166,7 +166,7 @@ class ListItems:
         if textbody:
             vi.setPlot(textbody)
         if art_id:
-            art_url  = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
+            art_url = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
             li.setArt({'thumb': art_url, 'fanart': self.fanart})
         li.setProperty('IsPlayable', 'true')
         li.setPath(url)
