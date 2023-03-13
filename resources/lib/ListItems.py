@@ -13,6 +13,7 @@ class ListItems:
     NOWHERE = 'plugin://plugin.audio.indigitube/?mode=explicit'
 
     def __init__(self, addon):
+        self.matrix = '19.' in xbmc.getInfoLabel('System.BuildVersion')
         self.addon = addon
         self.allow_explicit = self.addon.getSettingBool('allow_explicit')
         self.allow_deceased = self.addon.getSettingBool('allow_deceased')
@@ -68,10 +69,19 @@ class ListItems:
             title += ' (Explicit)'
             if not self.allow_explicit:
                 url = self.NOWHERE
+        if artist:
+            title = title + ' - ' + artist
         li = xbmcgui.ListItem(label=title, offscreen=True)
-        vi = li.getVideoInfoTag()
-        vi.setPlot(textbody)
-        vi.setTitle(title + ' - ' + artist)
+        if not self.matrix:
+            vi = li.getVideoInfoTag()
+            vi.setTitle(title)
+            vi.setPlot(textbody)
+        else: # Matrix v19.0
+            vi = {
+                'title':     title,
+                'plot':      textbody,
+            }
+            li.setInfo('video', vi)
         li.setArt({'thumb': art_url, 'fanart': self.fanart})
         li.setProperty('IsPlayable', 'true')
         li.setPath(url)
@@ -100,9 +110,16 @@ class ListItems:
             if not self.allow_explicit:
                 url = self.NOWHERE
         li = xbmcgui.ListItem(label=title, offscreen=True)
-        vi = li.getVideoInfoTag()
-        vi.setTitle(title)
-        vi.setPlot(textbody)
+        if not self.matrix:
+            vi = li.getVideoInfoTag()
+            vi.setTitle(title)
+            vi.setPlot(textbody)
+        else: # Matrix v19.0
+            vi = {
+                'title':     title,
+                'plot':      textbody,
+            }
+            li.setInfo('video', vi)
         li.setArt({'fanart': self.fanart})
         li.setPath(url)
         return (url, li, True)
@@ -123,10 +140,8 @@ class ListItems:
 
         if item_data.get('allExplicit') or item_data.get('explicit'):
             title += ' (Explicit)'
-        li = xbmcgui.ListItem(label=title, offscreen=True)
-        vi = li.getVideoInfoTag()
-        vi.setPlot(textbody)
-        li.setArt({'thumb': art_url, 'fanart': self.fanart})
+        if artist:
+            title = title + ' - ' + artist
         folder = False
 
         if len(item_data.get('items', [])) > 1:
@@ -137,7 +152,7 @@ class ListItems:
                 if not self.allow_explicit:
                     folder = False
                     url = self.NOWHERE
-            vi.setTitle(title + ' - ' + artist)
+            li = xbmcgui.ListItem(label=title, offscreen=True)
         else:
             item = item_data.get('items', [])[0]
             file = item.get('file', '')
@@ -145,13 +160,24 @@ class ListItems:
                 file = file.get('_id')
             url = self.INDIGITUBE_TRACK_URL.format(file)
             
+            li = xbmcgui.ListItem(label=title, offscreen=True)
             li.setProperty('IsPlayable', 'true')
             if item_data.get('explicit'):
                 if not self.allow_explicit:
                     li.setProperty('IsPlayable', 'false')
                     url = self.NOWHERE
-            vi.setTitle(title)
 
+        li.setArt({'thumb': art_url, 'fanart': self.fanart})
+        if not self.matrix:
+            vi = li.getVideoInfoTag()
+            vi.setTitle(title)
+            vi.setPlot(textbody)
+        else: # Matrix v19.0
+            vi = {
+                'title':     title,
+                'plot':      textbody,
+            }
+            li.setInfo('video', vi)
         li.setPath(url)
         return (url, li, folder)
 
@@ -168,16 +194,27 @@ class ListItems:
             if not self.allow_explicit:
                 url = self.NOWHERE
         li = xbmcgui.ListItem(label=title, offscreen=True)
-        mi = li.getMusicInfoTag()
-        mi.setTitle(title)
-        mi.setArtist(artist)
-        mi.setMediaType('song')
-        if args.get('album'):
-            mi.setAlbum(args.get('album'))
-        if args.get('album_artist'):
-            mi.setAlbumArtist(args.get('album_artist'))
-        if args.get('track_number', 0) > 0:
+        # if not self.matrix:
+        if False:
+            mi = li.getMusicInfoTag()
+            mi.setTitle(title)
+            mi.setArtist(artist)
+            mi.setMediaType('song')
+            if args.get('album'):
+                mi.setAlbum(args.get('album'))
+            if args.get('album_artist'):
+                mi.setAlbumArtist(args.get('album_artist'))
             mi.setTrack(args.get('track_number'))
+        else: # Matrix v19.0
+            mi = {
+                'title':       title,
+                'artist':      artist,
+                'mediatype':   'song',
+                'album':       args.get('album'),
+                'albumartist': args.get('album_artist'),
+                'tracknumber': args.get('track_number'),
+            }
+            li.setInfo('music', mi)
         li.setArt({'thumb': args.get('art_url'), 'fanart': self.fanart})
         li.setProperty('IsPlayable', 'true')
         li.setPath(url)
@@ -199,11 +236,19 @@ class ListItems:
             if not self.allow_explicit:
                 url = self.NOWHERE
         li = xbmcgui.ListItem(label=title, offscreen=True)
-        vi = li.getVideoInfoTag()
-        vi.setTitle(title)
-        vi.setDuration(duration)
-        if textbody:
-            vi.setPlot(textbody)
+        if not self.matrix:
+            vi = li.getVideoInfoTag()
+            vi.setTitle(title)
+            vi.setDuration(duration)
+            if textbody:
+                vi.setPlot(textbody)
+        else:
+            vi = {
+                'title':     title,
+                'duration':  duration,
+                'plot':      textbody,
+            }
+            li.setInfo('video', vi)
         if art_id:
             art_url = self.INDIGITUBE_ALBUM_ART_URL.format(art_id, self._album_quality())
             li.setArt({'thumb': art_url, 'fanart': self.fanart})
