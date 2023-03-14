@@ -97,7 +97,10 @@ def play_song(url):
 def main():
     if addon.getSettingBool('first_run'):
         xbmcgui.Dialog().textviewer(get_string(30098), get_string(30099))
-        explicit = xbmcgui.Dialog().yesno(get_string(30030), get_string(30032), defaultbutton=xbmcgui.DLG_YESNO_YES_BTN)
+        if not list_items.matrix:
+            explicit = xbmcgui.Dialog().yesno(get_string(30030), get_string(30032), defaultbutton=xbmcgui.DLG_YESNO_YES_BTN)
+        else:
+            explicit = xbmcgui.Dialog().yesno(get_string(30030), get_string(30032))
         # deceased = xbmcgui.Dialog().yesno(get_string(30040), get_string(30042), defaultbutton=xbmcgui.DLG_YESNO_YES_BTN)
         addon.setSettingBool('allow_explicit', explicit)
         # addon.setSettingBool('allow_deceased', deceased)
