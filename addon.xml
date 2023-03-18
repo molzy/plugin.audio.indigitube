@@ -20,7 +20,9 @@
         <assets>
             <icon>resources/icon.jpg</icon>
             <fanart>resources/fanart.jpg</fanart>
-            <screenshot>resources/screenshot.jpg</screenshot>
+            <screenshot>resources/screenshots/home.jpg</screenshot>
+            <screenshot>resources/screenshots/radio.jpg</screenshot>
+            <screenshot>resources/screenshots/album.jpg</screenshot>
         </assets>
     </extension>
 </addon>
