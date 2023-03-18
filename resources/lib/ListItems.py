@@ -204,6 +204,7 @@ class ListItems:
                 mi.setAlbum(args.get('album'))
             if args.get('album_artist'):
                 mi.setAlbumArtist(args.get('album_artist'))
+            # setTrack doesn't work in v20. Bypassed
             mi.setTrack(args.get('track_number'))
         else: # Matrix v19.0
             mi = {

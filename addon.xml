@@ -18,7 +18,7 @@
 - Initial release, with content from the homepage including radio, albums, videos and more
         </news>
         <assets>
-            <icon>resources/icon.jpg</icon>
+            <icon>resources/icon.png</icon>
             <fanart>resources/fanart.jpg</fanart>
             <screenshot>resources/screenshots/home.jpg</screenshot>
             <screenshot>resources/screenshots/radio.jpg</screenshot>
